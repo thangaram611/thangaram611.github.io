@@ -1,0 +1,14 @@
+{
+  "name": "thangaram611.github.io",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "rm -rf _site && eleventy --serve",
+    "build": "rm -rf _site && eleventy",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "@11ty/eleventy": "^3.1.8",
+    "@11ty/eleventy-plugin-rss": "^3.1.0"
+  }
+}

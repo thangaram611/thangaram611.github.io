@@ -16,6 +16,8 @@ export function render({ site, page, collections, pagination, title, description
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
 <title>${esc(fullTitle)}</title>
 <meta name="description" content="${summary}">
 <meta name="author" content="${esc(site.author)}">

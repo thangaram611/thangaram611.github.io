@@ -149,11 +149,11 @@ article li { margin: 0.5rem 0; }
   .heads [role] { font-size: 1.1rem; padding: 0 0 0 1.2rem; }
   .heads .m { display: inline-block; position: absolute; left: 0; top: 0.62rem; box-shadow: none; }
   .rail > *::before { display: none; }
-  .row { display: block; padding-block: 1.6rem 0.4rem; }
-  .row > time { display: block; width: auto; padding: 0 0 0.7rem; transform: none; }
+  /* A thread stacks its date and its pieces; a column it does not fill takes no room, not even a gap. */
+  .row { display: flex; flex-direction: column; gap: 0.85rem; padding-block: 1.6rem 0.4rem; }
+  .row > time { width: auto; margin-bottom: -0.15rem; transform: none; }
   .row > time:empty, .wire, .c:empty, .c.project .it + .it::before { display: none; }
   .c { padding-right: 0; }
-  .c + .c { margin-top: 0.85rem; }
   .it { padding: 0 0 0 1.5rem; }
   .it > .m { top: 0.44rem; }
   .c.project .it:not(:last-child)::after, .c:has(~ .c .it) .it::after { content: ""; position: absolute; left: calc(0.31rem - 1px); top: 0.75rem; bottom: calc(-0.85rem - 0.75rem); width: 2px; background: var(--rail); }

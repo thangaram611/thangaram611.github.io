@@ -17,10 +17,8 @@ export const stamp = (date, show) => `<time datetime="${isoDate(date)}">${show(d
 
 // A list that runs through time is drawn as a winding dotted line, with a stop at every piece. Each entry carries
 // the stretch that leaves its stop; the stylesheet turns every other stretch around, which is what makes it wind.
-// The line arrives from above the first stop and carries on past the last, fading at both ends. Each stretch is
-// drawn twice, plain and lit, so the lit copy can fade in and out around whichever entry is pointed at.
-const stretch = (name) => `<svg class="${name}" viewBox="0 0 40 100" preserveAspectRatio="none" aria-hidden="true"><path d="M20 0C44 25 44 75 20 100"/></svg>`;
-export const road = stretch("road") + stretch("road lit");
+// The line arrives from above the first stop and carries on past the last, fading at both ends.
+export const road = `<svg class="road" viewBox="0 0 40 100" preserveAspectRatio="none" aria-hidden="true"><path d="M20 0C44 25 44 75 20 100"/></svg>`;
 export const journey = (lines, attributes = "") =>
   lines.length ? `<div class="journey"${attributes}>\n<div class="approach" role="presentation">${road}</div>\n${lines.join("\n")}\n</div>` : "";
 

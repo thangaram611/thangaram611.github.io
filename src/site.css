@@ -51,12 +51,14 @@ footer a { color: var(--muted); }
 
 /* The dots are the text colour, shown dim. How bright they are along a stretch is a mask with two lights in it: one
    at the stop the stretch leaves and one at the stop it arrives at. Pointing at an entry, or tabbing into it, turns
-   up the light at its stop on both the stretch below and the stretch above, so the dots brighten beside that entry
-   only, fading in from its top edge and out again by its bottom edge. A second mask fades the two ends of the line. */
+   up the light at its stop on both the stretch above and the stretch below. The dots travel up, so the light leads
+   the way: it reaches a long way up ahead of the stop and trails off quickly behind it. A second mask fades the two
+   ends of the line. */
 @property --from { syntax: "<number>"; inherits: false; initial-value: 0.3; }
 @property --into { syntax: "<number>"; inherits: false; initial-value: 0.3; }
 .road {
-  mask-image: linear-gradient(rgb(0 0 0 / var(--from, 0.3)) 30%, rgb(0 0 0 / 0.3) calc(100% - var(--reach)), rgb(0 0 0 / var(--into, 0.3))), var(--ends, linear-gradient(#000, #000));
+  --ahead: 7rem; --behind: 2rem; /* how far the light reaches above a stop, and how far it trails below */
+  mask-image: linear-gradient(rgb(0 0 0 / var(--from, 0.3)), rgb(0 0 0 / 0.3) var(--behind), rgb(0 0 0 / 0.3) calc(100% - var(--ahead)), rgb(0 0 0 / var(--into, 0.3))), var(--ends, linear-gradient(#000, #000));
   mask-composite: intersect;
   transition: --from 0.3s, --into 0.3s;
 }

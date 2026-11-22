@@ -3,7 +3,9 @@
   --idea: #9a6700; --problem: #cf222e; --project: #1a7f37;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --gutter: 5.5rem; /* the date column of the map; the archives set their own */
+  --gutter: 9.75rem; /* the column that holds a date and the road beside it, the same in the map and the archives */
+  --asphalt: color-mix(in srgb, var(--fg) 11%, var(--bg));
+  --paint: color-mix(in srgb, var(--fg) 46%, var(--bg));
 }
 @media (prefers-color-scheme: dark) {
   :root { --bg: #0d1117; --fg: #e6edf3; --muted: #8b949e; --line: #30363d; --rail: #484f58; --accent: #2dd4bf; --code: #161b22;
@@ -38,12 +40,23 @@ footer a { color: var(--muted); }
 .m.problem { background: var(--problem); border-radius: 50%; }
 .m.project { background: var(--project); border-radius: 2px; }
 
-/* The rail: where a list runs through time and has two or more dates, a hairline joins them down the right of the
-   date column. It is the page's line colour and it never moves, so it stays quieter than the wire. */
-.rail > * { position: relative; }
-.rail > *::before { content: ""; position: absolute; left: calc(var(--gutter) - 1.1rem); top: 0; bottom: 0; width: 1px; background: var(--line); }
-.rail > :first-child::before { top: var(--reach); }
-.rail > :last-child::before { bottom: auto; height: var(--reach); }
+/* The road. A list that runs through time winds down the date column as a road, with a stop at every piece.
+   Each entry draws the stretch that leaves its stop and reaches the next one; every other stretch is turned
+   around, so the road swings from side to side and still passes through every stop in one straight column. */
+.journey { --reach: 0.9rem; --mid: calc(var(--gutter) - 2.4rem); } /* how far down an entry its stop sits, and the line the stops share */
+.journey > * { position: relative; }
+.road { position: absolute; left: calc(var(--mid) - 1.25rem); top: var(--reach); width: 2.5rem; height: 100%; overflow: visible; pointer-events: none; }
+.road path { fill: none; vector-effect: non-scaling-stroke; stroke: var(--asphalt); stroke-width: 11px; }
+.road path + path { stroke: var(--paint); stroke-width: 1.5px; stroke-dasharray: 5 7; transition: stroke 0.2s; }
+.journey > :nth-child(even) > .road { transform: scaleX(-1); }
+/* It arrives from above the first stop and carries on past the last, fading at both ends: there is more either way. */
+.approach { height: 0; }
+.approach > .road { top: calc(var(--reach) - 8rem); height: 8rem; mask-image: linear-gradient(transparent 58%, #000 96%); }
+.journey > :last-child > .road { height: 9rem; mask-image: linear-gradient(#000 6%, transparent 46%); }
+/* A stop. It answers when its entry is pointed at, and the paint on its stretch of road starts to move. */
+.journey > :not(.approach)::before { content: ""; position: absolute; z-index: 1; left: calc(var(--mid) - 0.3rem); top: calc(var(--reach) - 0.3rem); width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--fg); box-shadow: 0 0 0 3px var(--bg); transition: transform 0.25s var(--ease), background 0.2s; }
+.journey > :hover::before, .journey > :focus-within::before { background: var(--accent); transform: scale(1.4); }
+.journey > :hover > .road path + path, .journey > :focus-within > .road path + path { stroke: var(--fg); }
 
 /* landing */
 .hero { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: center; gap: clamp(1.5rem, 4vw, 4rem); padding-block: clamp(2.5rem, 6vw, 4.5rem) clamp(2.5rem, 5vw, 4rem); }
@@ -68,8 +81,9 @@ footer a { color: var(--muted); }
 .heads .m { display: none; }
 .heads em { font: 0.8rem var(--mono); color: var(--muted); margin-left: 0.3rem; }
 .row { position: relative; padding-block: 1.9rem 0.6rem; }
-.row > time { grid-column: 1; grid-row: 1; width: 3.7rem; font: 0.8rem/1.35 var(--mono); color: var(--muted); transform: translateY(-0.23rem); }
-.map { --reach: 2.21rem; } /* from the top of a row down to the level of its marks and its date */
+.row > time { grid-column: 1; grid-row: 1; font: 0.8rem/1 var(--mono); color: var(--muted); white-space: nowrap; transform: translateY(-0.08rem); }
+.map .journey { --reach: 2.21rem; } /* from the top of a row down to the level of its marks, its date and its stop */
+.lead { grid-row: 1; align-self: start; height: 2px; margin-top: calc(0.31rem - 1px); margin-left: var(--mid); background: var(--line); }
 .c { grid-row: 1; min-width: 0; padding-right: 2.25rem; display: flex; flex-direction: column; gap: 0.85rem; }
 .c:last-child { padding-right: 0; }
 .it { position: relative; padding-top: 1.3rem; text-wrap: balance; }
@@ -98,11 +112,14 @@ footer a { color: var(--muted); }
   @keyframes drift { 50% { transform: translateY(-5px); } }
   @keyframes swap { 0%, 44% { opacity: 1; } 50%, 94% { opacity: 0; } 100% { opacity: 1; } }
   @keyframes pop { from { transform: scale(0); } }
+  .journey > :hover > .road path + path, .journey > :focus-within > .road path + path { animation: drive 0.7s linear infinite; }
+  @keyframes drive { to { stroke-dashoffset: -12px; } }
 }
 
 /* reading pages */
 main h1 { font-size: clamp(1.9rem, 4.2vw, 2.5rem); line-height: 1.15; letter-spacing: -0.025em; margin: 3.25rem 0 0.75rem; }
 main article h2, .grp { font-size: 1.3rem; line-height: 1.3; letter-spacing: -0.01em; margin: 2.75rem 0 0.75rem; }
+.grp { margin: 3.25rem 0 1.5rem var(--gutter); }
 .sub { color: var(--muted); font-size: 1.1rem; margin: 0 0 3rem; }
 .meta { color: var(--muted); font-size: 0.9rem; margin: 0 0 2.25rem; }
 .lede, .prose > p:first-child { font-size: 1.2rem; line-height: 1.55; }
@@ -114,9 +131,8 @@ th, td { text-align: left; padding: 0.55rem 0.75rem; border-bottom: 1px solid va
 th { color: var(--muted); font-weight: 600; }
 article ol, article ul:not(.plain) { padding-left: 1.4rem; }
 article li { margin: 0.5rem 0; }
-.note { --gutter: 7.5rem; --reach: 1rem; display: grid; grid-template-columns: var(--gutter) minmax(0, 1fr); padding-bottom: 2.5rem; }
-.note > time { font: 0.8rem var(--mono); color: var(--muted); padding-top: 0.42rem; }
-.note > div:only-child { grid-column: 1 / -1; }
+.note { display: grid; grid-template-columns: var(--gutter) minmax(0, 1fr); padding-bottom: 2.5rem; }
+.note > time { font: 0.8rem var(--mono); color: var(--muted); padding-top: 0.42rem; white-space: nowrap; }
 .note h2 { font-size: 1.2rem; line-height: 1.3; margin: 0 0 0.35rem; letter-spacing: -0.01em; }
 .note h2 a { color: var(--fg); text-decoration: none; }
 .note h2 a:hover { text-decoration: underline; }
@@ -148,11 +164,12 @@ article li { margin: 0.5rem 0; }
   .heads > span { display: none; }
   .heads [role] { font-size: 1.1rem; padding: 0 0 0 1.2rem; }
   .heads .m { display: inline-block; position: absolute; left: 0; top: 0.62rem; box-shadow: none; }
-  .rail > *::before { display: none; }
+  .road, .lead, .journey > *::before { display: none; }
+  .grp { margin-left: 0; }
   /* A thread stacks its date and its pieces; a column it does not fill takes no room, not even a gap. */
   .row { display: flex; flex-direction: column; gap: 0.85rem; padding-block: 1.6rem 0.4rem; }
   .row > time { width: auto; margin-bottom: -0.15rem; transform: none; }
-  .row > time:empty, .wire, .c:empty, .c.project .it + .it::before { display: none; }
+  .wire, .c:empty, .c.project .it + .it::before { display: none; }
   .c { padding-right: 0; }
   .it { padding: 0 0 0 1.5rem; }
   .it > .m { top: 0.44rem; }

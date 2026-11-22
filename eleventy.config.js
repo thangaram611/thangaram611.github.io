@@ -14,12 +14,12 @@ export default function (eleventyConfig) {
     if (data.draft && process.env.ELEVENTY_RUN_MODE === "build") return false;
   });
 
-  // The feed carries the pieces that have a date: ideas and problems. A project has none.
-  eleventyConfig.addCollection("dated", (api) => [...api.getFilteredByTag("ideas"), ...api.getFilteredByTag("problems")].sort((a, b) => a.date - b.date));
+  // The feed carries every piece: ideas, problems and projects, by date.
+  eleventyConfig.addCollection("pieces", (api) => ["ideas", "problems", "projects"].flatMap((kind) => api.getFilteredByTag(kind)).sort((a, b) => a.date - b.date));
   eleventyConfig.addPlugin(feedPlugin, {
     type: "atom",
     outputPath: "/feed.xml",
-    collection: { name: "dated", limit: 20 },
+    collection: { name: "pieces", limit: 20 },
     metadata: {
       language: "en",
       title: site.title,

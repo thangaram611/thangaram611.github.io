@@ -1,4 +1,4 @@
-import { PAGE, esc, finder, mark, pageUrl, pager, rail, shortDate, stamp, summary } from "./_includes/ui.js";
+import { PAGE, esc, finder, journey, mark, pageUrl, pager, road, shortDate, stamp, summary } from "./_includes/ui.js";
 
 // One page per PAGE problems, newest first. With no problems there is no page at all.
 export const data = {
@@ -14,7 +14,7 @@ export function render({ collections, pagination, description }) {
   const list = pagination.items.map((p) => {
     const built = (p.data.projects ?? []).map((slug) => projectOf(slug, `problems/${p.fileSlug}.md`));
     const made = built.length ? `<p class="went">${built.map((b) => `${mark("project")}<a href="${b.url}">${esc(b.data.title)}</a>`).join(" ")}</p>` : "";
-    return `<article class="note">${stamp(p.date, shortDate)}<div><h2><a href="${p.url}">${esc(p.data.title)}</a></h2><p>${summary(p)}</p>${made}</div></article>`;
+    return `<article class="note">${road}${stamp(p.date, shortDate)}<div><h2><a href="${p.url}">${esc(p.data.title)}</a></h2><p>${summary(p)}</p>${made}</div></article>`;
   });
-  return `<main><h1>Problems</h1><p class="sub">${description}</p>${rail(list)}${pager(pagination)}</main>`;
+  return `<main><h1>Problems</h1><p class="sub">${description}</p>${journey(list)}${pager(pagination)}</main>`;
 }

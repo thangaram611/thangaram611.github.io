@@ -31,7 +31,7 @@ async function build(pieces) {
 const piece = (fields, body = "Body text.") => `---\n${Object.entries(fields).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join("\n")}\n---\n\n${body}\n`;
 const idea = (title, date, more) => piece({ title, description: "A wish, in a line.", date, ...more });
 const problem = (title, date, more) => piece({ title, description: "A summary.", date, ...more });
-const project = (title, order) => piece({ title, line: "What it does.", meta: "Some facts", group: "Projects", order });
+const project = (title, date = "2026-08-01", more) => piece({ title, line: "What it does.", meta: "Some facts", group: "Projects", date, ...more });
 const count = (html, needle) => html.split(needle).length - 1;
 const sectionUrls = (pages) => Object.keys(pages).filter((url) => KINDS.some((kind) => url.startsWith(`/${kind}/`)));
 const SITE = "https://thangaram611.github.io";
@@ -51,13 +51,14 @@ test("search engines are told what exists and what each page is", async () => {
   const pages = await build({
     "ideas/wish.md": idea("A wish", "2026-10-01"),
     "problems/snag.md": problem("A snag", "2026-11-01", { idea: "wish", projects: ["tool"] }),
-    "projects/tool.md": project("tool", 1),
+    "projects/tool.md": project("tool"),
   });
   assert.match(pages["/robots.txt"], new RegExp(`^Sitemap: ${SITE}/sitemap.xml$`, "m"));
   // Pages only: the feed is not a page. Ideas and problems carry the date they were written.
   assert.deepEqual(listed(pages), ["/", "/ideas/", "/ideas/wish/", "/problems/", "/problems/snag/", "/projects/", "/projects/tool/"]);
   assert.match(pages["/sitemap.xml"], /problems\/snag\/<\/loc><lastmod>2026-11-01<\/lastmod>/);
   assert.match(pages["/sitemap.xml"], /ideas\/wish\/<\/loc><lastmod>2026-10-01<\/lastmod>/);
+  assert.match(pages["/sitemap.xml"], /projects\/tool\/<\/loc><lastmod>2026-08-01<\/lastmod>/);
 
   const page = pages["/problems/snag/"];
   assert.ok(page.includes(`<link rel="canonical" href="${SITE}/problems/snag/">`));
@@ -88,7 +89,7 @@ test("a full thread is linked in both directions", async () => {
   const pages = await build({
     "ideas/wish.md": idea("A wish", "2026-10-01"),
     "problems/snag.md": problem("A snag", "2026-11-01", { idea: "wish", projects: ["tool"] }),
-    "projects/tool.md": project("tool", 1),
+    "projects/tool.md": project("tool"),
   });
   assert.equal(count(pages["/"], 'role="columnheader"'), 3);
   assert.equal(count(pages["/"], 'class="wire"'), 1);
@@ -108,7 +109,7 @@ test("an idea has a page of its own that says what became of it", async () => {
     "ideas/open.md": idea("Still a wish", "2026-09-01"),
     "ideas/built.md": idea("Got built", "2026-09-02", { project: "tool", note: "It took a week.", description: "The short version." }),
     "ideas/elsewhere.md": idea("Lives elsewhere", "2026-09-03", { link: { url: "https://example.test/x", label: "a thing" } }),
-    "projects/tool.md": project("tool", 1),
+    "projects/tool.md": project("tool"),
   });
   const open = pages["/ideas/open/"];
   assert.ok(open.includes("<h1>Still a wish</h1>") && open.includes("Body text."));
@@ -132,46 +133,45 @@ test("an idea has a page of its own that says what became of it", async () => {
   assert.equal(count(pages["/ideas/"], 'class="note"'), 3);
 });
 
-test("the feed carries the dated pieces, ideas and problems, newest first", async () => {
+test("the feed carries every piece, newest first", async () => {
   const pages = await build({
     "ideas/wish.md": idea("A wish", "2026-10-01", { project: "tool" }),
     "problems/snag.md": problem("A snag", "2026-11-01"),
-    "projects/tool.md": project("tool", 1),
+    "projects/tool.md": project("tool"),
   });
   const entries = [...pages["/feed.xml"].matchAll(/<entry>\s*<title>(.*?)<\/title>\s*<link href="(.*?)"/g)].map((m) => [m[1], m[2]]);
-  assert.deepEqual(entries, [["A snag", `${SITE}/problems/snag/`], ["A wish", `${SITE}/ideas/wish/`]]);
-
-  // An idea alone is enough for the feed to exist and be linked; a project alone is not, because it has no date.
-  const ideaOnly = await build({ "ideas/wish.md": idea("A wish", "2026-10-01") });
-  assert.ok(ideaOnly["/"].includes('href="/feed.xml"') && ideaOnly["/feed.xml"].includes("<title>A wish</title>"));
-  const projectOnly = await build({ "projects/tool.md": project("tool", 1) });
-  assert.ok(!projectOnly["/"].includes("feed.xml"));
+  assert.deepEqual(entries, [["A snag", `${SITE}/problems/snag/`], ["A wish", `${SITE}/ideas/wish/`], ["tool", `${SITE}/projects/tool/`]]);
+  // Any one piece is enough for the feed to exist and be linked.
+  const projectOnly = await build({ "projects/tool.md": project("tool") });
+  assert.ok(projectOnly["/"].includes('href="/feed.xml"') && projectOnly["/feed.xml"].includes("<title>tool</title>"));
 });
 
-test("a list that runs through time says the year where it changes, and a rail joins two or more dates", async () => {
+test("a list that runs through time is a road: every piece is a stop with its full date, projects included", async () => {
   const dates = (html) => [...html.matchAll(/<time datetime="[\d-]+">(.*?)<\/time>/g)].map((m) => m[1]);
   const pages = await build({
     "problems/late.md": problem("Late", "2026-11-19"),
     "problems/early.md": problem("Early", "2026-11-13"),
     "ideas/old.md": idea("An old wish", "2017-02-25", { project: "tool" }),
-    "projects/tool.md": project("tool", 1),
-    "projects/loose.md": project("loose", 2),
+    "projects/tool.md": project("tool", "2017-02-25"),
+    "projects/loose.md": project("loose", "2026-03-01", { group: "Elsewhere" }),
   });
-  // On the front page the year is said on the first thread and wherever it changes, so 2017 is not read as this year.
-  assert.deepEqual(dates(pages["/"]), ["19 Nov 2026", "13 Nov", "25 Feb 2017"]);
-  // The rail holds the dated threads only; a project with no thread has no date and sits below it.
-  const railed = pages["/"].match(/<div class="rail" role="rowgroup">\n(.*?)\n<\/div>\n(.*?)\n<\/div>/s);
-  assert.equal(count(railed[1], 'class="row"'), 3);
-  assert.ok(!railed[1].includes(">loose<") && railed[2].includes(">loose<"));
+  // The front page: one stop per thread, newest first. A project with no thread is a stop of its own, at its date.
+  assert.deepEqual(dates(pages["/"]), ["19 Nov 2026", "13 Nov 2026", "1 Mar 2026", "25 Feb 2017"]);
+  assert.equal(count(pages["/"], 'class="journey"'), 1);
+  assert.equal(count(pages["/"], 'class="road"'), 5, "the approach, then one stretch of road leaving each stop");
 
   assert.deepEqual(dates(pages["/problems/"]), ["19 Nov 2026", "13 Nov 2026"]);
-  assert.ok(pages["/problems/"].includes('<div class="rail">'));
-  // One date is not a timeline: no rail.
-  assert.deepEqual(dates(pages["/ideas/"]), ["25 Feb 2017"]);
-  assert.ok(!pages["/ideas/"].includes('class="rail"'));
+  assert.equal(count(pages["/problems/"], 'class="road"'), 3);
+  // Projects are dated like everything else: newest first, each group on a road of its own, the newest group first.
+  assert.deepEqual(dates(pages["/projects/"]), ["1 Mar 2026", "25 Feb 2017"]);
+  assert.match(pages["/projects/"], /Elsewhere<\/h2>.*class="journey".*>loose<.*Projects<\/h2>.*class="journey".*>tool</s);
+  assert.ok(pages["/projects/tool/"].includes('<time datetime="2017-02-25">25 February 2017</time>'));
+
+  // One piece is still a stop on the road.
   const alone = await build({ "ideas/old.md": idea("An old wish", "2017-02-25") });
   assert.deepEqual(dates(alone["/"]), ["25 Feb 2017"]);
-  assert.ok(!alone["/"].includes('class="rail"') && !alone["/"].includes("How it connects"));
+  assert.equal(count(alone["/"], 'class="road"'), 2);
+  assert.ok(!alone["/"].includes("How it connects"));
 });
 
 test("wherever a piece is listed, its one-line description is beside its title", async () => {
@@ -179,7 +179,7 @@ test("wherever a piece is listed, its one-line description is beside its title",
     "ideas/wish.md": idea("A wish", "2026-10-01", { description: "Why I wanted it." }),
     "problems/snag.md": problem("A snag", "2026-11-01", { idea: "wish", projects: ["tool"] }),
     "problems/again.md": problem("Again", "2026-11-02", { projects: ["tool"] }),
-    "projects/tool.md": project("tool", 1),
+    "projects/tool.md": project("tool"),
   });
   const beside = (html, title, text) => new RegExp(`>${title}</a>(</h2>)?<(small|p)>${text}</(small|p)>`).test(html);
   // The map: every kind, and a project each time it appears, not only the first.

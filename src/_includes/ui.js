@@ -5,7 +5,6 @@ export const esc = (text) => String(text).replace(/[&<>"]/g, (c) => ({ "&": "&am
 
 // Front-matter dates are parsed as UTC midnight, so they are formatted in UTC too.
 const format = (options) => (date) => date.toLocaleDateString("en-GB", { timeZone: "UTC", ...options });
-export const dayMonth = format({ day: "numeric", month: "short" });
 export const shortDate = format({ day: "numeric", month: "short", year: "numeric" });
 export const longDate = format({ day: "numeric", month: "long", year: "numeric" });
 
@@ -13,8 +12,12 @@ export const longDate = format({ day: "numeric", month: "long", year: "numeric" 
 export const isoDate = (date) => date.toISOString().slice(0, 10);
 export const stamp = (date, show) => `<time datetime="${isoDate(date)}">${show(date)}</time>`;
 
-// A list that runs through time. Two or more dated lines are joined by a faint rail; one alone is not a timeline.
-export const rail = (lines, attributes = "") => (lines.length ? `<div${lines.length > 1 ? ' class="rail"' : ""}${attributes}>\n${lines.join("\n")}\n</div>` : "");
+// A list that runs through time is drawn as a winding road, with a stop at every piece. Each entry carries the
+// stretch of road that leaves its stop; the stylesheet turns every other stretch around, which is what makes it wind.
+// The road arrives from above the first stop and carries on past the last, fading at both ends.
+export const road = `<svg class="road" viewBox="0 0 40 100" preserveAspectRatio="none" aria-hidden="true"><path d="M20 0C44 25 44 75 20 100"/><path d="M20 0C44 25 44 75 20 100"/></svg>`;
+export const journey = (lines, attributes = "") =>
+  lines.length ? `<div class="journey"${attributes}>\n<div class="approach" role="presentation">${road}</div>\n${lines.join("\n")}\n</div>` : "";
 
 // Wherever a piece is listed it carries one line about itself: its `description`, which for a project is its `line`.
 // A piece without one cannot be listed, so the build stops and names the file.

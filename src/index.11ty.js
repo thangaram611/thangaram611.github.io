@@ -1,4 +1,4 @@
-import { FRONT, dayMonth, esc, finder, jsonLd, mark, rail, shortDate, stamp, summary } from "./_includes/ui.js";
+import { FRONT, esc, finder, journey, jsonLd, mark, road, shortDate, stamp, summary } from "./_includes/ui.js";
 import site from "./_data/site.js";
 
 export const data = { layout: "base.11ty.js", title: site.title, permalink: "/" };
@@ -9,8 +9,8 @@ const KINDS = [
   { kind: "project", label: "Projects", section: "projects", width: "minmax(0, 1.15fr)" },
 ];
 
-// One row per thread: the idea it started from, the problem written up, and what got built.
-// Every piece appears exactly once, newest thread first; projects with no thread yet come last.
+// One row per thread: the idea it started from, the problem written up, and what got built. Newest first.
+// A project that no idea or problem leads to yet is a thread of its own, at the date it began.
 function threads(ideas, problems, projects) {
   const rows = problems.map((p) => ({ date: p.date, idea: p.data.idea, problem: p, projects: p.data.projects ?? [] }));
   const told = new Set(rows.map((r) => r.idea));
@@ -18,9 +18,9 @@ function threads(ideas, problems, projects) {
     if (told.has(idea.fileSlug)) continue;
     rows.push({ date: idea.date, idea: idea.fileSlug, projects: idea.data.project ? [idea.data.project] : [], link: idea.data.link });
   }
-  rows.sort((a, b) => b.date - a.date);
   const built = new Set(rows.flatMap((r) => r.projects));
-  return [...rows, ...projects.filter((p) => !built.has(p.fileSlug)).map((p) => ({ projects: [p.fileSlug] }))];
+  for (const p of projects) if (!built.has(p.fileSlug)) rows.push({ date: p.date, projects: [p.fileSlug] });
+  return rows.sort((a, b) => b.date - a.date);
 }
 
 // The headline, drawn: what other people make rests on the layers I build.
@@ -59,13 +59,13 @@ const item = (kind, piece) => `<div class="it">${mark(kind)}<a href="${piece.url
 function map(collections) {
   const ideas = collections.ideas ?? [];
   const problems = collections.problems ?? [];
-  const projects = [...(collections.projects ?? [])].sort((a, b) => a.data.order - b.data.order);
+  const projects = collections.projects ?? [];
   const ideaOf = finder(ideas, "idea");
   const projectOf = finder(projects, "project");
 
   const all = threads(ideas, problems, projects);
   const rows = all.slice(0, FRONT).map((row) => {
-    const from = row.problem ? `problems/${row.problem.fileSlug}.md` : `ideas/${row.idea}.md`;
+    const from = row.problem ? `problems/${row.problem.fileSlug}.md` : row.idea ? `ideas/${row.idea}.md` : `projects/${row.projects[0]}.md`;
     return {
       date: row.date,
       idea: row.idea ? item("idea", ideaOf(row.idea, from)) : "",
@@ -85,20 +85,16 @@ function map(collections) {
     const first = filled.indexOf(true);
     const last = filled.lastIndexOf(true);
     const wire = last > first ? `<i class="wire" style="grid-column:${first + 2}/${last + 2}"></i>` : "";
+    const lead = `<i class="lead" style="grid-column:1/${first + 2}"></i>`; // from the stop on the road to the thread's first piece
     const cells = columns.map(({ kind }, col) => `<div class="c ${kind}" style="grid-column:${col + 2}">${row[kind]}</div>`);
-    // The year is said on the first thread and wherever it changes, so an old thread is not read as this year's.
-    const sameYear = row.date?.getUTCFullYear() === rows[n - 1]?.date?.getUTCFullYear();
-    return `<div class="row" role="row" style="--i:${n}">${row.date ? stamp(row.date, sameYear ? dayMonth : shortDate) : "<time></time>"}${wire}${cells.join("")}</div>`;
+    return `<div class="row" role="row" style="--i:${n}">${road}${stamp(row.date, shortDate)}${lead}${wire}${cells.join("")}</div>`;
   });
-  // Threads carry a date and sit on the rail; a project with no thread yet has none and comes after it.
-  const dated = rows.filter((row) => row.date).length;
   const sections = columns.filter(({ kind }) => counts[kind]).map(({ label, section }) => `<a href="/${section}/">${label}</a>`);
 
   return `<section>
 <div class="map" role="table" aria-label="How ideas, problems and projects connect" style="--cols:${columns.map((c) => c.width).join(" ")}">
 <div class="heads" role="row"><span></span>${heads.join("")}</div>
-${rail(lines.slice(0, dated), ' role="rowgroup"')}
-${lines.slice(dated).join("\n")}
+${journey(lines, ' role="rowgroup"')}
 </div>
 ${all.length > FRONT ? `<p class="more">These are the ${FRONT} most recent threads of ${all.length}. The rest are under ${new Intl.ListFormat("en-GB").format(sections)}.</p>` : ""}
 </section>`;

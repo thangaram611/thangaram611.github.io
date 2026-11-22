@@ -12,9 +12,9 @@ Each piece is one markdown file. The file name is its address.
 | --- | --- | --- |
 | Idea | `src/ideas/` | `title`, `description`, `date`; optional `project`, `link` (`url`, `label`), `note` |
 | Problem | `src/problems/` | `title`, `description`, `date`; optional `idea`, `projects`, `status` |
-| Project | `src/projects/` | `title`, `line`, `meta`, `group`, `order`; optional `url` |
+| Project | `src/projects/` | `title`, `line`, `meta`, `group`, `date`; optional `url` |
 
-Every piece has a page of its own. A problem names the idea it came from and the projects it led to, and an idea may name the project it became. Every other link, including the map on the front page, is worked out from those fields. A link to a piece that is missing or still a draft fails the build.
+Every piece has a page of its own and a date; a project's date is the day it began. Lists run newest first down a road, with one stop for each piece, and the feed carries all three kinds. A problem names the idea it came from and the projects it led to, and an idea may name the project it became. Every other link, including the map on the front page, is worked out from those fields. A link to a piece that is missing or still a draft fails the build.
 
 A problem is written free-flow, but it should cover five things: the problem, what I tried, what already exists, what was missing, and what I did.
 

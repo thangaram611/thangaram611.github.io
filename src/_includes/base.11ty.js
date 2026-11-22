@@ -6,7 +6,7 @@ export function render({ site, page, collections, pagination, title, description
     .filter((s) => collections[s]?.length)
     .map((s) => `<a href="/${s}/"${page.url.startsWith(`/${s}/`) ? ' aria-current="page"' : ""}>${s[0].toUpperCase() + s.slice(1)}</a>`)
     .join("");
-  const feed = collections.dated?.length;
+  const feed = collections.pieces?.length;
   const summary = esc(description ?? site.description);
   const paged = pagination?.pageNumber ? `${title}, page ${pagination.pageNumber + 1}` : title;
   const fullTitle = title === site.title ? site.title : `${paged} · ${site.title}`;

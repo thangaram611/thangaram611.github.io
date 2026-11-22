@@ -1,4 +1,4 @@
-import { esc, mark, newestFirst, summary } from "./ui.js";
+import { esc, longDate, mark, newestFirst, stamp, summary } from "./ui.js";
 
 export const data = { layout: "base.11ty.js" };
 
@@ -11,7 +11,7 @@ export function render({ collections, page, title, line, meta, url, content }) {
 
   return `<main><article>
 <h1>${esc(title)}</h1>
-<p class="meta">${esc(meta)}</p>
+<p class="meta">${stamp(page.date, longDate)} · ${esc(meta)}</p>
 <p class="lede">${esc(line)}</p>
 ${content}
 ${url ? `<p><a class="btn" href="${url}">Open the repository ↗</a></p>` : ""}

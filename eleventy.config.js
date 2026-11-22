@@ -7,7 +7,7 @@ export default function (eleventyConfig) {
   const input = process.env.SITE_INPUT ?? "src";
   eleventyConfig.setInputDirectory(input);
   eleventyConfig.setOutputDirectory("_site");
-  eleventyConfig.addPassthroughCopy({ [`${input}/site.css`]: "site.css" });
+  for (const file of ["site.css", "favicon.svg", "og.png"]) eleventyConfig.addPassthroughCopy({ [`${input}/${file}`]: file });
 
   // A piece marked `draft: true` shows in `npm run dev` and is left out of the published build.
   eleventyConfig.addPreprocessor("drafts", "md", (data) => {

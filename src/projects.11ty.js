@@ -5,7 +5,7 @@ export const data = {
   layout: "base.11ty.js",
   title: "Projects",
   description: "What I built and what I contributed to, with the problems each one answers.",
-  pagination: { data: "collections.projects", size: PAGE, before: (items) => [...items].sort((a, b) => a.data.order - b.data.order) },
+  pagination: { data: "collections.projects", size: PAGE, addAllPagesToCollections: true, before: (items) => [...items].sort((a, b) => a.data.order - b.data.order) },
   permalink: pageUrl("projects"),
 };
 

@@ -18,6 +18,12 @@ A problem names the idea it came from and the projects it led to. Every other li
 
 A problem is written free-flow, but it should cover five things: the problem, what I tried, what already exists, what was missing, and what I did.
 
+## Being found
+
+- The title should be the problem as someone would search for it or ask it, and the first paragraph should say what happened and how it ended. `description` is the one-sentence version shown in search results and link previews.
+- The build adds the rest on every page: a canonical address, sharing tags with `src/og.png`, dates that machines can read, and structured data naming the author. It also writes `robots.txt` and a `sitemap.xml` of the pages that exist.
+- There is no `llms.txt` on purpose. Google states it is not used, and no measurement so far shows AI search engines reading it.
+
 ## When it grows
 
 - The front page shows the 8 most recent threads and points to the archives for the rest.

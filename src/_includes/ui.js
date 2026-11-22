@@ -9,6 +9,13 @@ export const dayMonth = format({ day: "numeric", month: "short" });
 export const shortDate = format({ day: "numeric", month: "short", year: "numeric" });
 export const longDate = format({ day: "numeric", month: "long", year: "numeric" });
 
+// A date as people read it, wrapped so that search engines can read it too.
+export const isoDate = (date) => date.toISOString().slice(0, 10);
+export const stamp = (date, show) => `<time datetime="${isoDate(date)}">${show(date)}</time>`;
+
+// Structured data for search engines. It must only repeat what the page already says in visible text.
+export const jsonLd = (data) => `<script type="application/ld+json">${JSON.stringify({ "@context": "https://schema.org", ...data }).replace(/</g, "\\u003c")}</script>`;
+
 // Collections arrive oldest first. Reversing them (rather than re-sorting) matches the order
 // the archive pages are split in, which ideaUrl below relies on.
 export const newestFirst = (items) => [...items].reverse();

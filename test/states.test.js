@@ -34,6 +34,8 @@ const problem = (title, date, more) => piece({ title, description: "A summary.",
 const project = (title, order) => piece({ title, line: "What it does.", meta: "Some facts", group: "Projects", order });
 const count = (html, needle) => html.split(needle).length - 1;
 const sectionUrls = (pages) => Object.keys(pages).filter((url) => KINDS.some((kind) => url.startsWith(`/${kind}/`)));
+const SITE = "https://thangaram611.github.io";
+const listed = (pages) => [...pages["/sitemap.xml"].matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1].replace(SITE, "")).sort();
 
 test("with nothing written, the site is the front page alone", async () => {
   const pages = await build({});
@@ -41,6 +43,31 @@ test("with nothing written, the site is the front page alone", async () => {
   assert.ok(!pages["/"].includes('class="map"'), "no map");
   for (const kind of KINDS) assert.ok(!pages["/"].includes(`href="/${kind}/"`), `no ${kind} link`);
   assert.ok(!pages["/"].includes("feed.xml"), "no feed link");
+  assert.deepEqual(listed(pages), ["/"]);
+});
+
+test("search engines are told what exists and what each page is", async () => {
+  const pages = await build({
+    "ideas/wish.md": idea("A wish", "2026-10-01"),
+    "problems/snag.md": problem("A snag", "2026-11-01", { idea: "wish", projects: ["tool"] }),
+    "projects/tool.md": project("tool", 1),
+  });
+  assert.match(pages["/robots.txt"], new RegExp(`^Sitemap: ${SITE}/sitemap.xml$`, "m"));
+  // Pages only: ideas are anchors on their archive page, and the feed is not a page.
+  assert.deepEqual(listed(pages), ["/", "/ideas/", "/problems/", "/problems/snag/", "/projects/", "/projects/tool/"]);
+  assert.match(pages["/sitemap.xml"], /problems\/snag\/<\/loc><lastmod>2026-11-01<\/lastmod>/);
+
+  const page = pages["/problems/snag/"];
+  assert.ok(page.includes(`<link rel="canonical" href="${SITE}/problems/snag/">`));
+  assert.ok(page.includes('<meta property="og:type" content="article">'));
+  assert.ok(page.includes('<time datetime="2026-11-01">1 November 2026</time>'));
+  const about = JSON.parse(page.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]);
+  assert.deepEqual([about["@type"], about.headline, about.datePublished, about.author.name], ["BlogPosting", "A snag", "2026-11-01", "Thangaram Senthamaraikannan"]);
+
+  const front = JSON.parse(pages["/"].match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]);
+  assert.equal(front.mainEntity.name, "Thangaram Senthamaraikannan");
+  // Structured data may only repeat what the page shows: the name must be in the visible text too.
+  assert.ok(pages["/"].replace(/<script.*?<\/script>/gs, "").replace(/<head>.*?<\/head>/s, "").includes("Thangaram Senthamaraikannan"));
 });
 
 test("a problem on its own gets a page and a one-column map, and nothing else appears", async () => {

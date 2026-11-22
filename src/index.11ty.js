@@ -1,4 +1,4 @@
-import { FRONT, dayMonth, esc, finder, ideaUrl, mark } from "./_includes/ui.js";
+import { FRONT, dayMonth, esc, finder, ideaUrl, jsonLd, mark, stamp } from "./_includes/ui.js";
 import site from "./_data/site.js";
 
 export const data = { layout: "base.11ty.js", title: site.title, permalink: "/" };
@@ -87,7 +87,7 @@ function map(collections) {
     const last = filled.lastIndexOf(true);
     const wire = last > first ? `<i class="wire" style="grid-column:${first + 2}/${last + 2}"></i>` : "";
     const cells = columns.map(({ kind }, col) => `<div class="c ${kind}" style="grid-column:${col + 2}">${row[kind]}</div>`);
-    return `<div class="row" role="row" style="--i:${n}"><time>${row.date ? dayMonth(row.date) : ""}</time>${wire}${cells.join("")}</div>`;
+    return `<div class="row" role="row" style="--i:${n}">${row.date ? stamp(row.date, dayMonth) : "<time></time>"}${wire}${cells.join("")}</div>`;
   });
   const sections = columns.filter(({ kind }) => counts[kind]).map(({ label, section }) => `<a href="/${section}/">${label}</a>`);
 
@@ -102,6 +102,18 @@ ${all.length > FRONT ? `<p class="more">These are the ${FRONT} most recent threa
 }
 
 export function render({ collections }) {
+  // The front page is a profile of one person; this says so in the form search engines read.
+  const who = jsonLd({
+    "@type": "ProfilePage",
+    mainEntity: {
+      "@type": "Person",
+      "@id": `${site.url}#me`,
+      name: site.author,
+      description: "Platform engineer in Chennai.",
+      url: site.url,
+      sameAs: [site.github, site.linkedin],
+    },
+  });
   return `<main class="wide">
 <section class="hero">
 <div>
@@ -111,5 +123,6 @@ export function render({ collections }) {
 ${stack()}
 </section>
 ${map(collections)}
-</main>`;
+</main>
+${who}`;
 }

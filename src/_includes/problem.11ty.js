@@ -1,8 +1,8 @@
-import { esc, finder, ideaUrl, longDate, mark } from "./ui.js";
+import { esc, finder, ideaUrl, jsonLd, isoDate, longDate, mark, stamp } from "./ui.js";
 
-export const data = { layout: "base.11ty.js" };
+export const data = { layout: "base.11ty.js", ogType: "article" };
 
-export function render({ collections, page, title, idea, projects = [], status, content }) {
+export function render({ site, collections, page, title, description, idea, projects = [], status, content }) {
   const from = `problems/${page.fileSlug}.md`;
   const ideas = collections.ideas ?? [];
   const ideaOf = finder(ideas, "idea");
@@ -17,12 +17,24 @@ export function render({ collections, page, title, idea, projects = [], status, 
   ].filter(Boolean);
   const trail = around.length > 1 ? `<nav class="trail" aria-label="Where this sits">${around.join("")}</nav>` : "";
 
+  const address = new URL(page.url, site.url).href;
+  const about = jsonLd({
+    "@type": "BlogPosting",
+    headline: title,
+    description,
+    datePublished: isoDate(page.date),
+    url: address,
+    mainEntityOfPage: address,
+    author: { "@type": "Person", "@id": `${site.url}#me`, name: site.author, url: site.url },
+  });
+
   return `<main><article>
 ${trail}
 <h1>${esc(title)}</h1>
-<p class="meta">${longDate(page.date)}${status ? ` · ${esc(status)}` : ""}</p>
+<p class="meta">${stamp(page.date, longDate)}${status ? ` · ${esc(status)}` : ""}</p>
 <div class="prose">${content}</div>
 ${built.length ? `<h2>What got built</h2>
 <ul class="plain">${built.map((p) => `<li>${mark("project")}<a href="${p.url}">${esc(p.data.title)}</a><small>${esc(p.data.line)}</small></li>`).join("")}</ul>` : ""}
-</article></main>`;
+</article></main>
+${about}`;
 }

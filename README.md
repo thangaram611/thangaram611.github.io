@@ -44,4 +44,4 @@ npm test        # builds the templates in each state: empty, one piece, a full t
 npm run build   # the published site, into _site/
 ```
 
-Pushing to `master` runs the tests, then builds and deploys the site.
+Pushing to `main` runs the tests, then builds and deploys the site.

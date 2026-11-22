@@ -10,7 +10,7 @@ Each piece is one markdown file. The file name is its address.
 
 | Kind | Folder | Header fields |
 | --- | --- | --- |
-| Idea | `src/ideas/` | `title`, `date`; optional `description`, `project`, `link` (`url`, `label`), `note` |
+| Idea | `src/ideas/` | `title`, `description`, `date`; optional `project`, `link` (`url`, `label`), `note` |
 | Problem | `src/problems/` | `title`, `description`, `date`; optional `idea`, `projects`, `status` |
 | Project | `src/projects/` | `title`, `line`, `meta`, `group`, `order`; optional `url` |
 
@@ -20,7 +20,7 @@ A problem is written free-flow, but it should cover five things: the problem, wh
 
 ## Being found
 
-- The title should be the problem as someone would search for it or ask it, and the first paragraph should say what happened and how it ended. `description` is the one-sentence version shown in search results and link previews. A project's `line` does the same job, and an idea with no `description` is summarised by its title.
+- The title should be the problem as someone would search for it or ask it, and the first paragraph should say what happened and how it ended. `description` is the one-sentence version shown in search results and link previews. A project's `line` does the same job. Wherever a piece is listed, that one line sits beside its title, so a piece without one fails the build.
 - The build adds the rest on every page: a canonical address, sharing tags with `src/og.png`, dates that machines can read, and structured data naming the author. It also writes `robots.txt` and a `sitemap.xml` of the pages that exist.
 - There is no `llms.txt` on purpose. Google states it is not used, and no measurement so far shows AI search engines reading it.
 

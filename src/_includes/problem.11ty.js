@@ -1,4 +1,4 @@
-import { esc, finder, here, longDate, mark, posting, stamp, step, trail } from "./ui.js";
+import { esc, finder, here, longDate, mark, posting, stamp, step, summary, trail } from "./ui.js";
 
 export const data = { layout: "base.11ty.js", ogType: "article" };
 
@@ -15,7 +15,7 @@ ${trail([idea && step("idea", ideaOf(idea, from)), here("problem"), ...built.map
 <p class="meta">${stamp(page.date, longDate)}${status ? ` · ${esc(status)}` : ""}</p>
 <div class="prose">${content}</div>
 ${built.length ? `<h2>What got built</h2>
-<ul class="plain">${built.map((p) => `<li>${mark("project")}<a href="${p.url}">${esc(p.data.title)}</a><small>${esc(p.data.line)}</small></li>`).join("")}</ul>` : ""}
+<ul class="plain">${built.map((p) => `<li>${mark("project")}<a href="${p.url}">${esc(p.data.title)}</a><small>${summary(p)}</small></li>`).join("")}</ul>` : ""}
 </article></main>
 ${posting({ site, page, title, description })}`;
 }

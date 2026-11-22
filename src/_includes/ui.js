@@ -13,6 +13,16 @@ export const longDate = format({ day: "numeric", month: "long", year: "numeric" 
 export const isoDate = (date) => date.toISOString().slice(0, 10);
 export const stamp = (date, show) => `<time datetime="${isoDate(date)}">${show(date)}</time>`;
 
+// A list that runs through time. Two or more dated lines are joined by a faint rail; one alone is not a timeline.
+export const rail = (lines, attributes = "") => (lines.length ? `<div${lines.length > 1 ? ' class="rail"' : ""}${attributes}>\n${lines.join("\n")}\n</div>` : "");
+
+// Wherever a piece is listed it carries one line about itself: its `description`, which for a project is its `line`.
+// A piece without one cannot be listed, so the build stops and names the file.
+export function summary(piece) {
+  if (!piece.data.description) throw new Error(`${piece.inputPath} has no description.`);
+  return esc(piece.data.description);
+}
+
 // Structured data for search engines. It must only repeat what the page already says in visible text.
 export const jsonLd = (data) => `<script type="application/ld+json">${JSON.stringify({ "@context": "https://schema.org", ...data }).replace(/</g, "\\u003c")}</script>`;
 

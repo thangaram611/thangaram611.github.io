@@ -7,8 +7,7 @@ export function render({ site, page, collections, pagination, title, description
     .map((s) => `<a href="/${s}/"${page.url.startsWith(`/${s}/`) ? ' aria-current="page"' : ""}>${s[0].toUpperCase() + s.slice(1)}</a>`)
     .join("");
   const feed = collections.dated?.length;
-  // A page with no summary of its own borrows one: a piece of writing its title, anything else the site's description.
-  const summary = esc(description ?? (ogType === "article" ? title : site.description));
+  const summary = esc(description ?? site.description);
   const paged = pagination?.pageNumber ? `${title}, page ${pagination.pageNumber + 1}` : title;
   const fullTitle = title === site.title ? site.title : `${paged} · ${site.title}`;
   const address = new URL(page.url, site.url).href;

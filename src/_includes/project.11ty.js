@@ -1,4 +1,4 @@
-import { esc, mark, newestFirst, shortDate, stamp } from "./ui.js";
+import { esc, mark, newestFirst, summary } from "./ui.js";
 
 export const data = { layout: "base.11ty.js" };
 
@@ -7,7 +7,7 @@ export function render({ collections, page, title, line, meta, url, content }) {
   const problems = newestFirst((collections.problems ?? []).filter((p) => (p.data.projects ?? []).includes(slug)));
   const ideas = newestFirst((collections.ideas ?? []).filter((i) => i.data.project === slug || problems.some((p) => p.data.idea === i.fileSlug)));
   const list = (kind, items) =>
-    `<ul class="plain">${items.map((i) => `<li>${mark(kind)}<a href="${i.url}">${esc(i.data.title)}</a><small>${stamp(i.date, shortDate)}</small></li>`).join("")}</ul>`;
+    `<ul class="plain">${items.map((i) => `<li>${mark(kind)}<a href="${i.url}">${esc(i.data.title)}</a><small>${summary(i)}</small></li>`).join("")}</ul>`;
 
   return `<main><article>
 <h1>${esc(title)}</h1>

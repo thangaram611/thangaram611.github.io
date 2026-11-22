@@ -29,7 +29,7 @@ async function build(pieces) {
 }
 
 const piece = (fields, body = "Body text.") => `---\n${Object.entries(fields).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join("\n")}\n---\n\n${body}\n`;
-const idea = (title, date, more) => piece({ title, date, ...more });
+const idea = (title, date, more) => piece({ title, description: "A wish, in a line.", date, ...more });
 const problem = (title, date, more) => piece({ title, description: "A summary.", date, ...more });
 const project = (title, order) => piece({ title, line: "What it does.", meta: "Some facts", group: "Projects", order });
 const count = (html, needle) => html.split(needle).length - 1;
@@ -116,8 +116,7 @@ test("an idea has a page of its own that says what became of it", async () => {
   assert.ok(open.includes("Still open."));
   assert.ok(!open.includes('class="trail"'), "an idea that led nowhere has no trail");
   assert.ok(open.includes(`<link rel="canonical" href="${SITE}/ideas/open/">`));
-  // With no description of its own, an idea is summarised by its title, never by the site's description.
-  assert.ok(open.includes('<meta name="description" content="Still a wish">'));
+  assert.ok(open.includes('<meta name="description" content="A wish, in a line.">'));
 
   const built = pages["/ideas/built/"];
   assert.ok(built.includes('<meta name="description" content="The short version.">'));
@@ -149,35 +148,61 @@ test("the feed carries the dated pieces, ideas and problems, newest first", asyn
   assert.ok(!projectOnly["/"].includes("feed.xml"));
 });
 
-test("the caption over the map names only the kinds that are on it", async () => {
-  const caption = (pages) => pages["/"].match(/<p class="cap">How it connects: (.*?)\.<\/p>/)?.[1];
-  const wish = idea("A wish", "2026-10-01", { project: "tool" });
-  const tool = project("tool", 1);
-  const snag = (more) => problem("A snag", "2026-11-01", more);
-
-  assert.equal(caption(await build({ "ideas/wish.md": wish, "projects/tool.md": tool })), "an idea becomes something built");
-  assert.equal(caption(await build({ "ideas/wish.md": idea("A wish", "2026-10-01"), "problems/snag.md": snag({ idea: "wish" }) })), "an idea becomes a problem worth writing up");
-  assert.equal(caption(await build({ "problems/snag.md": snag({ projects: ["tool"] }), "projects/tool.md": tool })), "a problem becomes something built");
-  assert.equal(
-    caption(await build({ "ideas/wish.md": wish, "problems/snag.md": snag({ idea: "wish", projects: ["tool"] }), "projects/tool.md": tool })),
-    "an idea becomes a problem worth writing up, and a problem becomes something built",
-  );
-  assert.equal(caption(await build({ "problems/snag.md": snag() })), undefined, "one kind alone needs no caption");
-});
-
-test("the front page says the year once, on the first thread and wherever it changes", async () => {
+test("a list that runs through time says the year where it changes, and a rail joins two or more dates", async () => {
+  const dates = (html) => [...html.matchAll(/<time datetime="[\d-]+">(.*?)<\/time>/g)].map((m) => m[1]);
   const pages = await build({
     "problems/late.md": problem("Late", "2026-11-19"),
     "problems/early.md": problem("Early", "2026-11-13"),
     "ideas/old.md": idea("An old wish", "2017-02-25", { project: "tool" }),
     "projects/tool.md": project("tool", 1),
+    "projects/loose.md": project("loose", 2),
   });
-  const dates = [...pages["/"].matchAll(/<div class="row"[^>]*><time datetime="[\d-]+">(.*?)<\/time>/g)].map((m) => m[1]);
-  assert.deepEqual(dates, ["19 Nov 2026", "13 Nov", "25 Feb 2017"]);
+  // On the front page the year is said on the first thread and wherever it changes, so 2017 is not read as this year.
+  assert.deepEqual(dates(pages["/"]), ["19 Nov 2026", "13 Nov", "25 Feb 2017"]);
+  // The rail holds the dated threads only; a project with no thread has no date and sits below it.
+  const railed = pages["/"].match(/<div class="rail" role="rowgroup">\n(.*?)\n<\/div>\n(.*?)\n<\/div>/s);
+  assert.equal(count(railed[1], 'class="row"'), 3);
+  assert.ok(!railed[1].includes(">loose<") && railed[2].includes(">loose<"));
 
-  // An old thread on its own must still say which year it is from.
+  assert.deepEqual(dates(pages["/problems/"]), ["19 Nov 2026", "13 Nov 2026"]);
+  assert.ok(pages["/problems/"].includes('<div class="rail">'));
+  // One date is not a timeline: no rail.
+  assert.deepEqual(dates(pages["/ideas/"]), ["25 Feb 2017"]);
+  assert.ok(!pages["/ideas/"].includes('class="rail"'));
   const alone = await build({ "ideas/old.md": idea("An old wish", "2017-02-25") });
-  assert.match(alone["/"], /<time datetime="2017-02-25">25 Feb 2017<\/time>/);
+  assert.deepEqual(dates(alone["/"]), ["25 Feb 2017"]);
+  assert.ok(!alone["/"].includes('class="rail"') && !alone["/"].includes("How it connects"));
+});
+
+test("wherever a piece is listed, its one-line description is beside its title", async () => {
+  const pages = await build({
+    "ideas/wish.md": idea("A wish", "2026-10-01", { description: "Why I wanted it." }),
+    "problems/snag.md": problem("A snag", "2026-11-01", { idea: "wish", projects: ["tool"] }),
+    "problems/again.md": problem("Again", "2026-11-02", { projects: ["tool"] }),
+    "projects/tool.md": project("tool", 1),
+  });
+  const beside = (html, title, text) => new RegExp(`>${title}</a>(</h2>)?<(small|p)>${text}</(small|p)>`).test(html);
+  // The map: every kind, and a project each time it appears, not only the first.
+  assert.ok(beside(pages["/"], "A wish", "Why I wanted it."));
+  assert.ok(beside(pages["/"], "A snag", "A summary."));
+  assert.equal(count(pages["/"], ">tool</a><small>What it does.</small>"), 2);
+  // The archives.
+  assert.ok(beside(pages["/ideas/"], "A wish", "Why I wanted it."));
+  assert.ok(beside(pages["/problems/"], "A snag", "A summary."));
+  // The lists on a piece's own page.
+  assert.ok(beside(pages["/projects/tool/"], "A snag", "A summary."));
+  assert.ok(beside(pages["/projects/tool/"], "A wish", "Why I wanted it."));
+  assert.ok(beside(pages["/problems/snag/"], "tool", "What it does."));
+
+  // Something an idea became outside the site is not a piece; its line says where the link leads.
+  const away = await build({ "ideas/gone.md": idea("Gone elsewhere", "2026-10-01", { link: { url: "https://example.test/x/", label: "a thing" } }) });
+  assert.ok(away["/"].includes('<a href="https://example.test/x/">a thing ↗</a><small>example.test/x</small>'));
+
+  // A piece with no description cannot be listed, so the build says which file to fix.
+  const failure = await build({ "ideas/bare.md": piece({ title: "Bare", date: "2026-10-01" }) }).then(() => null, (error) => error);
+  const chain = [];
+  for (let e = failure; e; e = e.originalError ?? e.cause) chain.push(e.message);
+  assert.match(chain.join("\n"), /ideas\/bare\.md has no description/);
 });
 
 test("archives split into pages, the front page shows only the newest threads, and every idea keeps its page", async () => {

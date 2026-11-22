@@ -1,4 +1,4 @@
-import { FRONT, dayMonth, esc, finder, jsonLd, mark, shortDate, stamp } from "./_includes/ui.js";
+import { FRONT, dayMonth, esc, finder, jsonLd, mark, rail, shortDate, stamp, summary } from "./_includes/ui.js";
 import site from "./_data/site.js";
 
 export const data = { layout: "base.11ty.js", title: site.title, permalink: "/" };
@@ -46,8 +46,14 @@ function stack() {
   return `<svg class="stack" viewBox="0 0 454 302" role="img" aria-label="Somebody else's product, or agent, resting on the layers I build: SDKs, CLI and runtime, with the platform beneath.">${drawn.reverse().join("")}</svg>`;
 }
 
-const item = (kind, href, title, sub) =>
-  `<div class="it">${mark(kind)}<a href="${href}">${title}</a>${sub ? `<small>${esc(sub)}</small>` : ""}</div>`;
+// Something an idea became outside this site. Its one line is where the link leads.
+function outside({ url, label }) {
+  const { host, pathname } = new URL(url);
+  return `<div class="it">${mark("project")}<a href="${url}">${esc(label)} ↗</a><small>${esc(host + pathname.replace(/\/$/, ""))}</small></div>`;
+}
+
+// One piece on the map: its mark, its title, and the one line about it.
+const item = (kind, piece) => `<div class="it">${mark(kind)}<a href="${piece.url}">${esc(piece.data.title)}</a><small>${summary(piece)}</small></div>`;
 
 // The map of threads. Only the newest FRONT are shown, and a column exists only if one of them fills it.
 function map(collections) {
@@ -56,23 +62,15 @@ function map(collections) {
   const projects = [...(collections.projects ?? [])].sort((a, b) => a.data.order - b.data.order);
   const ideaOf = finder(ideas, "idea");
   const projectOf = finder(projects, "project");
-  const described = new Set(); // a project's one-line description is shown only the first time it appears
 
   const all = threads(ideas, problems, projects);
   const rows = all.slice(0, FRONT).map((row) => {
     const from = row.problem ? `problems/${row.problem.fileSlug}.md` : `ideas/${row.idea}.md`;
-    const made = row.projects.map((slug) => {
-      const p = projectOf(slug, from);
-      const sub = described.has(slug) ? "" : p.data.line;
-      described.add(slug);
-      return item("project", p.url, esc(p.data.title), sub);
-    });
-    const wish = row.idea && ideaOf(row.idea, from);
     return {
       date: row.date,
-      idea: wish ? item("idea", wish.url, esc(wish.data.title)) : "",
-      problem: row.problem ? item("problem", row.problem.url, esc(row.problem.data.title)) : "",
-      project: row.link ? item("project", row.link.url, `${esc(row.link.label)} ↗`) : made.join(""),
+      idea: row.idea ? item("idea", ideaOf(row.idea, from)) : "",
+      problem: row.problem ? item("problem", row.problem) : "",
+      project: row.link ? outside(row.link) : row.projects.map((slug) => item("project", projectOf(slug, from))).join(""),
     };
   });
   if (!rows.length) return "";
@@ -88,24 +86,19 @@ function map(collections) {
     const last = filled.lastIndexOf(true);
     const wire = last > first ? `<i class="wire" style="grid-column:${first + 2}/${last + 2}"></i>` : "";
     const cells = columns.map(({ kind }, col) => `<div class="c ${kind}" style="grid-column:${col + 2}">${row[kind]}</div>`);
-    // The year is said once: on the first thread and wherever it changes, so an old thread is not read as this year's.
+    // The year is said on the first thread and wherever it changes, so an old thread is not read as this year's.
     const sameYear = row.date?.getUTCFullYear() === rows[n - 1]?.date?.getUTCFullYear();
     return `<div class="row" role="row" style="--i:${n}">${row.date ? stamp(row.date, sameYear ? dayMonth : shortDate) : "<time></time>"}${wire}${cells.join("")}</div>`;
   });
+  // Threads carry a date and sit on the rail; a project with no thread yet has none and comes after it.
+  const dated = rows.filter((row) => row.date).length;
   const sections = columns.filter(({ kind }) => counts[kind]).map(({ label, section }) => `<a href="/${section}/">${label}</a>`);
-  // The caption describes only the steps the map shows; an idea can become a project with no problem between.
-  const on = (kind) => columns.some((column) => column.kind === kind);
-  const steps = [
-    on("idea") && on("problem") && "an idea becomes a problem worth writing up",
-    on("problem") && on("project") && "a problem becomes something built",
-    on("idea") && on("project") && !on("problem") && "an idea becomes something built",
-  ].filter(Boolean);
 
   return `<section>
-${steps.length ? `<p class="cap">How it connects: ${steps.join(", and ")}.</p>` : ""}
 <div class="map" role="table" aria-label="How ideas, problems and projects connect" style="--cols:${columns.map((c) => c.width).join(" ")}">
 <div class="heads" role="row"><span></span>${heads.join("")}</div>
-${lines.join("\n")}
+${rail(lines.slice(0, dated), ' role="rowgroup"')}
+${lines.slice(dated).join("\n")}
 </div>
 ${all.length > FRONT ? `<p class="more">These are the ${FRONT} most recent threads of ${all.length}. The rest are under ${new Intl.ListFormat("en-GB").format(sections)}.</p>` : ""}
 </section>`;

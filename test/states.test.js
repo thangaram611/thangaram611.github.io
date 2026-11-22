@@ -148,7 +148,8 @@ test("the feed carries every piece, newest first", async () => {
 });
 
 test("a list that runs through time is a road: every piece is a stop with its full date, projects included", async () => {
-  const dates = (html) => [...html.matchAll(/<time datetime="[\d-]+">(.*?)<\/time>/g)].map((m) => m[1]);
+  // A date beside a stop is a leaf: day, month, year in three parts that still read as one date.
+  const dates = (html) => [...html.matchAll(/<time class="when" datetime="[\d-]+">(.*?)<\/time>/g)].map((m) => m[1].replace(/<[^>]+>/g, ""));
   const pages = await build({
     "problems/late.md": problem("Late", "2026-11-19"),
     "problems/early.md": problem("Early", "2026-11-13"),

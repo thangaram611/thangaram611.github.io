@@ -5,8 +5,11 @@ export const esc = (text) => String(text).replace(/[&<>"]/g, (c) => ({ "&": "&am
 
 // Front-matter dates are parsed as UTC midnight, so they are formatted in UTC too.
 const format = (options) => (date) => date.toLocaleDateString("en-GB", { timeZone: "UTC", ...options });
-export const shortDate = format({ day: "numeric", month: "short", year: "numeric" });
+const month = format({ month: "short" });
 export const longDate = format({ day: "numeric", month: "long", year: "numeric" });
+
+// Beside its stop on the line a date is set like a leaf of a calendar: the day, the month under it, the year under that.
+export const leaf = (date) => `<time class="when" datetime="${date.toISOString().slice(0, 10)}"><b>${date.getUTCDate()}</b> <span>${month(date)}</span> <span>${date.getUTCFullYear()}</span></time>`;
 
 // A date as people read it, wrapped so that search engines can read it too.
 export const isoDate = (date) => date.toISOString().slice(0, 10);

@@ -1,4 +1,4 @@
-import { FRONT, esc, finder, journey, jsonLd, mark, road, shortDate, stamp, summary } from "./_includes/ui.js";
+import { esc, finder, FRONT, journey, jsonLd, leaf, mark, road, summary } from "./_includes/ui.js";
 import site from "./_data/site.js";
 
 export const data = { layout: "base.11ty.js", title: site.title, permalink: "/" };
@@ -87,7 +87,7 @@ function map(collections) {
     const wire = last > first ? `<i class="wire" style="grid-column:${first + 2}/${last + 2}"></i>` : "";
     const lead = `<i class="lead" style="grid-column:1/${first + 2}"></i>`; // from the stop on the road to the thread's first piece
     const cells = columns.map(({ kind }, col) => `<div class="c ${kind}" style="grid-column:${col + 2}">${row[kind]}</div>`);
-    return `<div class="row" role="row" style="--i:${n}">${road}${stamp(row.date, shortDate)}${lead}${wire}${cells.join("")}</div>`;
+    return `<div class="row" role="row" style="--i:${n}">${road}${leaf(row.date)}${lead}${wire}${cells.join("")}</div>`;
   });
   const sections = columns.filter(({ kind }) => counts[kind]).map(({ label, section }) => `<a href="/${section}/">${label}</a>`);
 

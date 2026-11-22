@@ -1,4 +1,4 @@
-import { FRONT, dayMonth, esc, finder, ideaUrl, jsonLd, mark, stamp } from "./_includes/ui.js";
+import { FRONT, dayMonth, esc, finder, ideaUrl, jsonLd, mark, shortDate, stamp } from "./_includes/ui.js";
 import site from "./_data/site.js";
 
 export const data = { layout: "base.11ty.js", title: site.title, permalink: "/" };
@@ -87,12 +87,21 @@ function map(collections) {
     const last = filled.lastIndexOf(true);
     const wire = last > first ? `<i class="wire" style="grid-column:${first + 2}/${last + 2}"></i>` : "";
     const cells = columns.map(({ kind }, col) => `<div class="c ${kind}" style="grid-column:${col + 2}">${row[kind]}</div>`);
-    return `<div class="row" role="row" style="--i:${n}">${row.date ? stamp(row.date, dayMonth) : "<time></time>"}${wire}${cells.join("")}</div>`;
+    // The year is said once: on the first thread and wherever it changes, so an old thread is not read as this year's.
+    const sameYear = row.date?.getUTCFullYear() === rows[n - 1]?.date?.getUTCFullYear();
+    return `<div class="row" role="row" style="--i:${n}">${row.date ? stamp(row.date, sameYear ? dayMonth : shortDate) : "<time></time>"}${wire}${cells.join("")}</div>`;
   });
   const sections = columns.filter(({ kind }) => counts[kind]).map(({ label, section }) => `<a href="/${section}/">${label}</a>`);
+  // The caption describes only the steps the map shows; an idea can become a project with no problem between.
+  const on = (kind) => columns.some((column) => column.kind === kind);
+  const steps = [
+    on("idea") && on("problem") && "an idea becomes a problem worth writing up",
+    on("problem") && on("project") && "a problem becomes something built",
+    on("idea") && on("project") && !on("problem") && "an idea becomes something built",
+  ].filter(Boolean);
 
   return `<section>
-${columns.length > 1 ? `<p class="cap">How it connects: an idea becomes a problem worth writing up, and a problem becomes something built.</p>` : ""}
+${steps.length ? `<p class="cap">How it connects: ${steps.join(", and ")}.</p>` : ""}
 <div class="map" role="table" aria-label="How ideas, problems and projects connect" style="--cols:${columns.map((c) => c.width).join(" ")}">
 <div class="heads" role="row"><span></span>${heads.join("")}</div>
 ${lines.join("\n")}

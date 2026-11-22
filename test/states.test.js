@@ -65,6 +65,9 @@ test("search engines are told what exists and what each page is", async () => {
   const about = JSON.parse(page.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]);
   assert.deepEqual([about["@type"], about.headline, about.datePublished, about.author.name], ["BlogPosting", "A snag", "2026-11-01", "Thangaram Senthamaraikannan"]);
 
+  // A project has no `description` field: its one line is what search results and link previews show.
+  assert.ok(pages["/projects/tool/"].includes('<meta name="description" content="What it does.">'));
+
   const front = JSON.parse(pages["/"].match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]);
   assert.equal(front.mainEntity.name, "Thangaram Senthamaraikannan");
   // Structured data may only repeat what the page shows: the name must be in the visible text too.
@@ -93,6 +96,37 @@ test("a full thread is linked in both directions", async () => {
   assert.match(pages["/projects/tool/"], /href="\/problems\/snag\/"/);
   assert.match(pages["/projects/tool/"], /href="\/ideas\/#wish"/);
   assert.match(pages["/ideas/"], /Became a problem: <a href="\/problems\/snag\/"/);
+});
+
+test("the caption over the map names only the kinds that are on it", async () => {
+  const caption = (pages) => pages["/"].match(/<p class="cap">How it connects: (.*?)\.<\/p>/)?.[1];
+  const wish = idea("A wish", "2026-10-01", { project: "tool" });
+  const tool = project("tool", 1);
+  const snag = (more) => problem("A snag", "2026-11-01", more);
+
+  assert.equal(caption(await build({ "ideas/wish.md": wish, "projects/tool.md": tool })), "an idea becomes something built");
+  assert.equal(caption(await build({ "ideas/wish.md": idea("A wish", "2026-10-01"), "problems/snag.md": snag({ idea: "wish" }) })), "an idea becomes a problem worth writing up");
+  assert.equal(caption(await build({ "problems/snag.md": snag({ projects: ["tool"] }), "projects/tool.md": tool })), "a problem becomes something built");
+  assert.equal(
+    caption(await build({ "ideas/wish.md": wish, "problems/snag.md": snag({ idea: "wish", projects: ["tool"] }), "projects/tool.md": tool })),
+    "an idea becomes a problem worth writing up, and a problem becomes something built",
+  );
+  assert.equal(caption(await build({ "problems/snag.md": snag() })), undefined, "one kind alone needs no caption");
+});
+
+test("the front page says the year once, on the first thread and wherever it changes", async () => {
+  const pages = await build({
+    "problems/late.md": problem("Late", "2026-11-19"),
+    "problems/early.md": problem("Early", "2026-11-13"),
+    "ideas/old.md": idea("An old wish", "2017-02-25", { project: "tool" }),
+    "projects/tool.md": project("tool", 1),
+  });
+  const dates = [...pages["/"].matchAll(/<div class="row"[^>]*><time datetime="[\d-]+">(.*?)<\/time>/g)].map((m) => m[1]);
+  assert.deepEqual(dates, ["19 Nov 2026", "13 Nov", "25 Feb 2017"]);
+
+  // An old thread on its own must still say which year it is from.
+  const alone = await build({ "ideas/old.md": idea("An old wish", "2017-02-25") });
+  assert.match(alone["/"], /<time datetime="2017-02-25">25 Feb 2017<\/time>/);
 });
 
 test("archives split into pages, the front page shows only the newest threads, and idea links follow", async () => {

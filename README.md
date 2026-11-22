@@ -20,7 +20,7 @@ A problem is written free-flow, but it should cover five things: the problem, wh
 
 ## Being found
 
-- The title should be the problem as someone would search for it or ask it, and the first paragraph should say what happened and how it ended. `description` is the one-sentence version shown in search results and link previews.
+- The title should be the problem as someone would search for it or ask it, and the first paragraph should say what happened and how it ended. `description` is the one-sentence version shown in search results and link previews. A project's `line` does the same job.
 - The build adds the rest on every page: a canonical address, sharing tags with `src/og.png`, dates that machines can read, and structured data naming the author. It also writes `robots.txt` and a `sitemap.xml` of the pages that exist.
 - There is no `llms.txt` on purpose. Google states it is not used, and no measurement so far shows AI search engines reading it.
 

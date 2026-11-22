@@ -44,6 +44,7 @@ test("with nothing written, the site is the front page alone", async () => {
   for (const kind of KINDS) assert.ok(!pages["/"].includes(`href="/${kind}/"`), `no ${kind} link`);
   assert.ok(!pages["/"].includes("feed.xml"), "no feed link");
   assert.deepEqual(listed(pages), ["/"]);
+  assert.match(pages["/"], /<meta name="google-site-verification" content="[\w-]{20,}">/, "Search Console ownership tag");
 });
 
 test("search engines are told what exists and what each page is", async () => {

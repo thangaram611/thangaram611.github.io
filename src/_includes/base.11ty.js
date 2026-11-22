@@ -20,6 +20,7 @@ export function render({ site, page, collections, pagination, title, description
 <meta name="description" content="${summary}">
 <meta name="author" content="${esc(site.author)}">
 <link rel="canonical" href="${address}">
+<meta name="google-site-verification" content="${site.googleVerification}">
 <meta property="og:type" content="${ogType}">
 <meta property="og:site_name" content="${esc(site.title)}">
 <meta property="og:url" content="${address}">

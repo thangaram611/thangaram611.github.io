@@ -1,4 +1,4 @@
-import { FRONT, dayMonth, esc, finder, ideaUrl, jsonLd, mark, shortDate, stamp } from "./_includes/ui.js";
+import { FRONT, dayMonth, esc, finder, jsonLd, mark, shortDate, stamp } from "./_includes/ui.js";
 import site from "./_data/site.js";
 
 export const data = { layout: "base.11ty.js", title: site.title, permalink: "/" };
@@ -67,9 +67,10 @@ function map(collections) {
       described.add(slug);
       return item("project", p.url, esc(p.data.title), sub);
     });
+    const wish = row.idea && ideaOf(row.idea, from);
     return {
       date: row.date,
-      idea: row.idea ? item("idea", ideaUrl(row.idea, ideas), esc(ideaOf(row.idea, from).data.title)) : "",
+      idea: wish ? item("idea", wish.url, esc(wish.data.title)) : "",
       problem: row.problem ? item("problem", row.problem.url, esc(row.problem.data.title)) : "",
       project: row.link ? item("project", row.link.url, `${esc(row.link.label)} ↗`) : made.join(""),
     };

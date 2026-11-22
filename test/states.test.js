@@ -54,9 +54,10 @@ test("search engines are told what exists and what each page is", async () => {
     "projects/tool.md": project("tool", 1),
   });
   assert.match(pages["/robots.txt"], new RegExp(`^Sitemap: ${SITE}/sitemap.xml$`, "m"));
-  // Pages only: ideas are anchors on their archive page, and the feed is not a page.
-  assert.deepEqual(listed(pages), ["/", "/ideas/", "/problems/", "/problems/snag/", "/projects/", "/projects/tool/"]);
+  // Pages only: the feed is not a page. Ideas and problems carry the date they were written.
+  assert.deepEqual(listed(pages), ["/", "/ideas/", "/ideas/wish/", "/problems/", "/problems/snag/", "/projects/", "/projects/tool/"]);
   assert.match(pages["/sitemap.xml"], /problems\/snag\/<\/loc><lastmod>2026-11-01<\/lastmod>/);
+  assert.match(pages["/sitemap.xml"], /ideas\/wish\/<\/loc><lastmod>2026-10-01<\/lastmod>/);
 
   const page = pages["/problems/snag/"];
   assert.ok(page.includes(`<link rel="canonical" href="${SITE}/problems/snag/">`));
@@ -91,11 +92,45 @@ test("a full thread is linked in both directions", async () => {
   });
   assert.equal(count(pages["/"], 'role="columnheader"'), 3);
   assert.equal(count(pages["/"], 'class="wire"'), 1);
-  assert.match(pages["/problems/snag/"], /href="\/ideas\/#wish"/);
+  assert.match(pages["/problems/snag/"], /href="\/ideas\/wish\/"/);
   assert.match(pages["/problems/snag/"], /href="\/projects\/tool\/"/);
   assert.match(pages["/projects/tool/"], /href="\/problems\/snag\/"/);
-  assert.match(pages["/projects/tool/"], /href="\/ideas\/#wish"/);
+  assert.match(pages["/projects/tool/"], /href="\/ideas\/wish\/"/);
+  assert.match(pages["/"], /href="\/ideas\/wish\/"/);
+  assert.match(pages["/ideas/"], /<h2><a href="\/ideas\/wish\/">A wish<\/a><\/h2>/);
   assert.match(pages["/ideas/"], /Became a problem: <a href="\/problems\/snag\/"/);
+  assert.match(pages["/ideas/wish/"], /class="trail".*href="\/problems\/snag\/".*href="\/projects\/tool\/"/s);
+  assert.match(pages["/ideas/wish/"], /Became a problem: <a href="\/problems\/snag\/"/);
+});
+
+test("an idea has a page of its own that says what became of it", async () => {
+  const pages = await build({
+    "ideas/open.md": idea("Still a wish", "2026-09-01"),
+    "ideas/built.md": idea("Got built", "2026-09-02", { project: "tool", note: "It took a week.", description: "The short version." }),
+    "ideas/elsewhere.md": idea("Lives elsewhere", "2026-09-03", { link: { url: "https://example.test/x", label: "a thing" } }),
+    "projects/tool.md": project("tool", 1),
+  });
+  const open = pages["/ideas/open/"];
+  assert.ok(open.includes("<h1>Still a wish</h1>") && open.includes("Body text."));
+  assert.ok(open.includes('<time datetime="2026-09-01">1 September 2026</time>'));
+  assert.ok(open.includes("Still open."));
+  assert.ok(!open.includes('class="trail"'), "an idea that led nowhere has no trail");
+  assert.ok(open.includes(`<link rel="canonical" href="${SITE}/ideas/open/">`));
+  // With no description of its own, an idea is summarised by its title, never by the site's description.
+  assert.ok(open.includes('<meta name="description" content="Still a wish">'));
+
+  const built = pages["/ideas/built/"];
+  assert.ok(built.includes('<meta name="description" content="The short version.">'));
+  assert.match(built, /Became a project: <a href="\/projects\/tool\/">tool<\/a>\. It took a week\./);
+  assert.match(built, /class="trail".*href="\/projects\/tool\/"/s);
+  assert.match(pages["/projects/tool/"], /href="\/ideas\/built\/"/);
+  const about = JSON.parse(built.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]);
+  assert.deepEqual([about["@type"], about.headline, about.datePublished], ["BlogPosting", "Got built", "2026-09-02"]);
+
+  assert.match(pages["/ideas/elsewhere/"], /Became <a href="https:\/\/example\.test\/x">a thing ↗<\/a>\./);
+  // The archive lists each idea by its title and links to its page; the text itself is on the page.
+  assert.ok(!pages["/ideas/"].includes("Body text."));
+  assert.equal(count(pages["/ideas/"], 'class="note"'), 3);
 });
 
 test("the caption over the map names only the kinds that are on it", async () => {
@@ -129,13 +164,14 @@ test("the front page says the year once, on the first thread and wherever it cha
   assert.match(alone["/"], /<time datetime="2017-02-25">25 Feb 2017<\/time>/);
 });
 
-test("archives split into pages, the front page shows only the newest threads, and idea links follow", async () => {
+test("archives split into pages, the front page shows only the newest threads, and every idea keeps its page", async () => {
   const day = (n) => new Date(Date.UTC(2026, 0, 1 + n)).toISOString().slice(0, 10);
   const pieces = { "problems/old.md": problem("About the oldest idea", "2026-06-01", { idea: "idea-00" }) };
   for (let n = 0; n < 45; n++) pieces[`ideas/idea-${String(n).padStart(2, "0")}.md`] = idea(`Idea ${n}`, day(n));
   const pages = await build(pieces);
 
-  assert.deepEqual(sectionUrls(pages).filter((url) => url.startsWith("/ideas/")).sort(), ["/ideas/", "/ideas/2/", "/ideas/3/"]);
+  assert.deepEqual(sectionUrls(pages).filter((url) => /^\/ideas\/(\d+\/)?$/.test(url)).sort(), ["/ideas/", "/ideas/2/", "/ideas/3/"]);
+  assert.equal(sectionUrls(pages).filter((url) => /^\/ideas\/idea-\d+\/$/.test(url)).length, 45);
   assert.equal(count(pages["/ideas/"], 'class="note"'), 20);
   assert.equal(count(pages["/ideas/3/"], 'class="note"'), 5);
   assert.match(pages["/ideas/2/"], /href="\/ideas\/"[^>]*>← Previous.*Page 2 of 3.*href="\/ideas\/3\/"[^>]*>Next →/s);
@@ -143,9 +179,10 @@ test("archives split into pages, the front page shows only the newest threads, a
   assert.equal(count(pages["/"], 'class="row"'), 8);
   assert.match(pages["/"], /8 most recent threads of 45/);
 
-  // The oldest idea sits on the last archive page; its problem must link there, and the anchor must exist.
-  assert.match(pages["/problems/old/"], /href="\/ideas\/3\/#idea-00"/);
-  assert.ok(pages["/ideas/3/"].includes('id="idea-00"'));
+  // Whichever archive page lists it, an idea keeps one address.
+  assert.match(pages["/problems/old/"], /href="\/ideas\/idea-00\/"/);
+  assert.match(pages["/ideas/3/"], /href="\/ideas\/idea-00\/"/);
+  assert.ok(pages["/ideas/idea-00/"]);
 });
 
 test("a link to a piece that does not exist fails the build", async () => {

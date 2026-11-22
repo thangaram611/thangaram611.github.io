@@ -10,17 +10,17 @@ Each piece is one markdown file. The file name is its address.
 
 | Kind | Folder | Header fields |
 | --- | --- | --- |
-| Idea | `src/ideas/` | `title`, `date`; optional `project`, `link` (`url`, `label`), `note` |
+| Idea | `src/ideas/` | `title`, `date`; optional `description`, `project`, `link` (`url`, `label`), `note` |
 | Problem | `src/problems/` | `title`, `description`, `date`; optional `idea`, `projects`, `status` |
 | Project | `src/projects/` | `title`, `line`, `meta`, `group`, `order`; optional `url` |
 
-A problem names the idea it came from and the projects it led to. Every other link, including the map on the front page, is worked out from those two fields. A link to a piece that is missing or still a draft fails the build.
+Every piece has a page of its own. A problem names the idea it came from and the projects it led to, and an idea may name the project it became. Every other link, including the map on the front page, is worked out from those fields. A link to a piece that is missing or still a draft fails the build.
 
 A problem is written free-flow, but it should cover five things: the problem, what I tried, what already exists, what was missing, and what I did.
 
 ## Being found
 
-- The title should be the problem as someone would search for it or ask it, and the first paragraph should say what happened and how it ended. `description` is the one-sentence version shown in search results and link previews. A project's `line` does the same job.
+- The title should be the problem as someone would search for it or ask it, and the first paragraph should say what happened and how it ended. `description` is the one-sentence version shown in search results and link previews. A project's `line` does the same job, and an idea with no `description` is summarised by its title.
 - The build adds the rest on every page: a canonical address, sharing tags with `src/og.png`, dates that machines can read, and structured data naming the author. It also writes `robots.txt` and a `sitemap.xml` of the pages that exist.
 - There is no `llms.txt` on purpose. Google states it is not used, and no measurement so far shows AI search engines reading it.
 

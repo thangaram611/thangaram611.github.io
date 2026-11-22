@@ -70,3 +70,4 @@ I rewrote the history to take the database login out of the five commits that he
 - What crossed between sessions was a customer id, which the customer's own page prints anyway. The finding is the mechanism.
 - I describe Auth0 and Authy from what they published at the time. I had not used either.
 - This is one small project read by its own author. I looked for what I now know to look for.
+- The repository on GitHub was created in November 2026, when I replaced the old one. Its commits carry their 2017 dates, but for those you now have my word, not GitHub's.

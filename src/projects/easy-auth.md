@@ -62,7 +62,7 @@ What was missing was what I did not know. A password is hashed, not encrypted. "
 
 ## What I did
 
-I rewrote the history to take the database login out of the five commits that held it, added a README that says what this was and that it must not be run, and archived the repository again. GitHub still serves the old commits to anyone who already has their hashes, and only GitHub can clear those.
+I rewrote the history to take the database login out of the five commits that held it, and added a README that says what this was and that it must not be run. GitHub went on serving the old commits to anyone who had their hashes, so I deleted the repository, pushed the clean history to a new one of the same name, and archived that.
 
 ## What this does not show
 

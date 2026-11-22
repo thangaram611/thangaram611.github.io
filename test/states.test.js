@@ -133,6 +133,22 @@ test("an idea has a page of its own that says what became of it", async () => {
   assert.equal(count(pages["/ideas/"], 'class="note"'), 3);
 });
 
+test("the feed carries the dated pieces, ideas and problems, newest first", async () => {
+  const pages = await build({
+    "ideas/wish.md": idea("A wish", "2026-10-01", { project: "tool" }),
+    "problems/snag.md": problem("A snag", "2026-11-01"),
+    "projects/tool.md": project("tool", 1),
+  });
+  const entries = [...pages["/feed.xml"].matchAll(/<entry>\s*<title>(.*?)<\/title>\s*<link href="(.*?)"/g)].map((m) => [m[1], m[2]]);
+  assert.deepEqual(entries, [["A snag", `${SITE}/problems/snag/`], ["A wish", `${SITE}/ideas/wish/`]]);
+
+  // An idea alone is enough for the feed to exist and be linked; a project alone is not, because it has no date.
+  const ideaOnly = await build({ "ideas/wish.md": idea("A wish", "2026-10-01") });
+  assert.ok(ideaOnly["/"].includes('href="/feed.xml"') && ideaOnly["/feed.xml"].includes("<title>A wish</title>"));
+  const projectOnly = await build({ "projects/tool.md": project("tool", 1) });
+  assert.ok(!projectOnly["/"].includes("feed.xml"));
+});
+
 test("the caption over the map names only the kinds that are on it", async () => {
   const caption = (pages) => pages["/"].match(/<p class="cap">How it connects: (.*?)\.<\/p>/)?.[1];
   const wish = idea("A wish", "2026-10-01", { project: "tool" });
